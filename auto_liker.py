@@ -4,6 +4,7 @@ import requests
 import robobrowser
 
 import sys
+from datetime import datetime, timedelta, timezone
 
 MOBILE_USER_AGENT = "Tinder/7.5.3 (iPhone; iOS 10.3.2; Scale/2.00)"
 FB_AUTH = "https://www.facebook.com/v2.6/dialog/oauth?redirect_uri=fb464891386855067%3A%2F%2Fauthorize%2F&display=touch&state=%7B%22challenge%22%3A%22IUUkEUqIGud332lfu%252BMJhxL4Wlc%253D%22%2C%220_auth_logger_id%22%3A%2230F06532-A1B9-4B10-BB28-B29956C71AB1%22%2C%22com.facebook.sdk_client_state%22%3Atrue%2C%223_method%22%3A%22sfvc_auth%22%7D&scope=user_birthday%2Cuser_photos%2Cuser_education_history%2Cemail%2Cuser_relationship_details%2Cuser_friends%2Cuser_work_history%2Cuser_likes&response_type=token%2Csigned_request&default_audience=friends&return_scopes=true&auth_type=rerequest&client_id=464891386855067&ret=login&sdk=ios&logger_id=30F06532-A1B9-4B10-BB28-B29956C71AB1&ext=1470840777&hash=AeZqkIcf-NEW6vBd"
@@ -43,7 +44,8 @@ def get_fb_id(access_token):
     return response.json()["id"]
 
 def auth_with_tinder(fb_token, fb_id):
-    response = requests.post(host + '/auth', data=json.dumps({'facebook_token': fb_token, 'facebook_id': fb_id}), headers=headers)
+    response = requests.post(host + '/auth', 
+    data=json.dumps({'facebook_token': fb_token, 'facebook_id': fb_id}), headers=headers)
     headers['X-Auth-Token'] = response.json()['token']
     print("Authenticated with tinder")
 
@@ -64,6 +66,22 @@ def like(rec):
     response = requests.get(host + '/like/' + rec, headers=headers)
     if response.status_code == 200:
         print("liked " + rec)
+
+def get_updates(timestamp):
+    timestamp = timestamp + 'Z'
+    response = requests.post(host + '/updates', 
+    data=json.dumps({'last_activity_date': timestamp}), headers=headers)
+    match_ids = []
+    matches = response.json()['matches']
+    for match in matches:
+        if (len(match['messages']) == 0):
+            match_ids.append(match['_id'])
+    print("Got new matches " + str(match_ids))
+    return match_ids
+
+def send_message(id, message):
+    response = requests.post(host + '/user/matches/' + id, json.dumps({'message': message}), 
+    headers=headers)
 
 
 if len(sys.argv) != 3:
@@ -91,3 +109,9 @@ else:
         for rec in recs:
             like(rec)
             no_likes = no_likes - 1
+
+    timestamp = datetime.utcnow() - timedelta(hours=12)
+    match_ids = get_updates(timestamp.isoformat())
+
+    for id in match_ids:
+        send_message(id, "What's up")
