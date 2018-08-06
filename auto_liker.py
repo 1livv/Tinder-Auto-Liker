@@ -18,6 +18,7 @@ headers = {
 }
 
 host = 'https://api.gotinder.com'
+ice_breaker = "Chiar nu am sa incerc sa te impresionez prin primul text. Am avut match pentru ca a existat ceva ce ne-a atras atentia reciproc, creand astfel o particica in noi ce isi doreste sa afle mai mult. Asa ca let's make the best out of it. Eu sunt {}, incantat!"
 
 def get_fb_access_token(email, password):
     s = robobrowser.RoboBrowser(user_agent=MOBILE_USER_AGENT, parser="lxml")
@@ -113,5 +114,6 @@ else:
     timestamp = datetime.utcnow() - timedelta(hours=12)
     match_ids = get_updates(timestamp.isoformat())
 
+    print(ice_breaker.format("Liviu"))
     for id in match_ids:
-        send_message(id, "What's up")
+        send_message(id, ice_breaker)
